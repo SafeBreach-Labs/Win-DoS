@@ -19,8 +19,7 @@ NULL = '\x00'
 
 def call_dsr_get_dc_name_ex2(target_ip: str, port: int, account: str, site_name: str, domain_name: str) -> None:
     """
-    Call DsrGetDcNameEx2 on a target IP and handle exceptions.
-    Checks cancellation_event periodically to support immediate termination.
+    Call DsrGetDcNameEx2.
     """
     rpctransport = DCERPCTransportFactory(f'ncacn_ip_tcp:{target_ip}[{port}]')
     dce = rpctransport.get_dce_rpc()
