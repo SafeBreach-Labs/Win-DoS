@@ -8,14 +8,14 @@ Created by SafeBreach Labs. For the full technical analysis check out the blog p
 
 This framework implements research that discovered 5 critical vulnerabilities affecting Windows systems:
 
-### DoS Vulnerabilities (4)
+### Win-DoS Vulnerabilities (4)
 - **LDAP Referral DoS** (CVE-2025-32724) - Memory exhaustion via massive LDAP referral lists affecting Domain Controllers
 - **NetLogon RPC DoS #1** (CVE-2025-26673) - Memory exhaustion in `NetrServerReqChallenge` function affecting Domain Controllers
 - **NetLogon RPC DoS #2** (CVE-2025-49716) - Memory exhaustion in `DsrAddressToSiteNamesW` function affecting Domain Controllers
 - **Spoolsv RPC DoS** (CVE-2025-49722) - Memory exhaustion in `RpcEnumPrinters` function affecting all Windows endpoints
 
-### DDoS Vulnerability (1)
-- **Win-DDoS** (CVE-2025-32724) - Leveraging Domain Controllers as botnet participants without authentication
+### Win-DDoS Vulnerability (1)
+- **LDAP Referral DDoS** (CVE-2025-32724) - Leveraging Domain Controllers as DDoS botnet participants without authentication
 
 ## Setup
 
@@ -31,7 +31,7 @@ This framework implements research that discovered 5 critical vulnerabilities af
 
 ## Module Documentation
 
-### [LDAP Attacks](ldap_attacks/README_ldap_attacks.md)
+### [LDAP Attacks](ldap_attacks/README.md)
 Implements the LDAP referral attacks we discovered. Features:
 - **DoS Mode**: Memory exhaustion via massive LDAP referral lists (500,000+ URLs)
 - **DDoS Mode**: Leveraging Domain Controllers as botnet participants
