@@ -37,7 +37,7 @@ Implements the LDAP referral attacks we discovered. Features:
 - **DoS Mode**: Memory exhaustion via massive LDAP referral lists (500,000+ URLs)
 - **DDoS Mode**: Leveraging Domain Controllers as botnet participants
 
-### [RPC Attacks](rpc_attacks/README.md)
+### [RPC Attacks](torpedos_rpc_attacks/README.md)
 Implements the RPC memory exhaustion attacks we discovered. Features:
 - **TorpeDoS technique**: Pre-bind thousands of clients without waiting for bind acks, pre-sign packets if needed, and flood victims with many RPC calls at once
 
