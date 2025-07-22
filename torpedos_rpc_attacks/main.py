@@ -33,7 +33,6 @@ from impacket.uuid import uuidtup_to_bin
 from impacket.dcerpc.v5.rpcrt import MSRPCBind, CtxItem, MSRPCHeader, MSRPC_BIND
 from datetime import datetime
 
-# -----------------------------------------------------------------------------
 def parse_cli_arguments():
     """
     Parse and return command-line arguments for the TorpeDoS RPC flooder tool.
@@ -77,7 +76,6 @@ def parse_cli_arguments():
     )
     return parser.parse_args()
 
-# -----------------------------------------------------------------------------
 class CustomSigningDCERPC(transport.DCERPC_v5):
     """
     Extension of impacket's DCERPC_v5 to expose internal signing parameters for NTLM signing.
@@ -96,7 +94,6 @@ class CustomSigningDCERPC(transport.DCERPC_v5):
         )
 
 
-# -----------------------------------------------------------------------------
 def load_packet_file(file_path):
     """
     Load and parse an RPC packet dump from a .hex file, extracting interface info, authentication requirement, and packet data.
@@ -132,7 +129,6 @@ def load_packet_file(file_path):
 
     return (interface_uuid, version), requires_authentication, packets
 
-# -----------------------------------------------------------------------------
 def resolve_rpc_port(server_ip, interface_uuid_bin):
     """
     Query the remote endpoint mapper (EPM) to resolve the TCP port for a given RPC interface UUID.
@@ -186,7 +182,6 @@ def rpc_stateless_bind(dce, rpc_transport, iface_uuid):
 
     rpc_transport.send(packet.get_packet())
 
-# -----------------------------------------------------------------------------
 def replay_packets_for_interface(
     server_ip, rpc_port, interface_info, packet_list,
     replay_count, worker_count, requires_authentication,
@@ -211,7 +206,6 @@ def replay_packets_for_interface(
     rpc_sessions = []  # List of (dce, transport) tuples
     signature_map = {}  # socket -> list of signature bytes
 
-    # -- Worker functions ---------------------------------------------------------------------
     def session_establishment_worker(task_queue, progress_bar, lock):
         """
         Worker thread for establishing DCE/RPC sessions (binds) to the target interface.
@@ -291,11 +285,6 @@ def replay_packets_for_interface(
             try:
                 sock = task_queue.get_nowait()
             except Empty:
-                # if all(
-                #     idx >= len(packet_list) for idx in packet_index_per_sock.values()
-                # ):
-                #     return
-                # continue
                 return
             idx = packet_index_per_sock[sock]
             if idx < len(packet_list):
@@ -369,9 +358,8 @@ def replay_packets_for_interface(
         for thread in threads:
             thread.join()
 
-    # -- Replay stages ------------------------------------------------------------------------
     print(
-        f"\n🎯 Interface={interface_info[0]}@v{interface_info[1]} "
+        f"\nInterface={interface_info[0]}@v{interface_info[1]} "
         f"Auth={'yes' if requires_authentication else 'no'} "
         f"File={packet_filename}"
     )
@@ -459,6 +447,5 @@ def main():
         if i + 1 != args.iterations:
             time.sleep(args.delay_between_iterations)
 
-# -----------------------------------------------------------------------------
 if __name__ == "__main__":
     main()
