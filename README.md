@@ -2,7 +2,8 @@
 
 A comprehensive framework implementing the "Win-DoS Epidemic" research, which discovered 5 critical vulnerabilities affecting Windows systems through novel attack techniques.
 
-Created by SafeBreach Labs. For the full technical analysis check out the blog post - .
+Created by SafeBreach Labs (Joint work of Or Yair and Shahak Morag).
+For the full technical analysis check out the blog post - .
 
 ## Overview
 
