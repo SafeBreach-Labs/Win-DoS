@@ -105,7 +105,7 @@ class CustomSigningDCERPC(transport.DCERPC_v5):
 
 def load_packet_file(file_path):
     """
-    Load and parse an RPC packet dump from a .hex file.
+    Load and parse an RPC packet dump from a textual hex dump file, extracting interface info, authentication requirement, and packet data.
 
     Args:
         file_path (pathlib.Path): Path to the .hex file containing packet data.
