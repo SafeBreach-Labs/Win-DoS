@@ -3,7 +3,7 @@
 A comprehensive framework implementing the "Win-DoS Epidemic" research, which discovered 5 critical vulnerabilities affecting Windows systems through novel attack techniques.
 
 Created by SafeBreach Labs (Joint work of Or Yair and Shahak Morag).
-For the full technical analysis check out the blog post - .
+For the full technical analysis check out the [blog post](https://www.safebreach.com/blog/win-dos-epidemic-abusing-rpc-for-dos-and-ddos/)
 
 ## Overview
 
