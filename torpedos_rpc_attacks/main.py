@@ -44,6 +44,7 @@ logging.basicConfig(
     ]
 )
 logger = logging.getLogger('TorpeDoS')
+logger.setLevel(logging.INFO)
 
 def parse_cli_arguments():
     """
